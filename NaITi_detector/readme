@@ -1,3 +1,7 @@
 buffer is the background data
 
 I put the data we got and the jupyter notebook I used to parse the data files in here - Bruce
+
+from the NaiTI_detector_Am notebooks, I got an energy-channel equation for this detector of:
+
+E = 2.15810466(channel) -1.02238504
