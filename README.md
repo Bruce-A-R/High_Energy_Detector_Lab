@@ -8,3 +8,5 @@ spectrum_reader.pynb can read any spectrum from either detector along with the c
 then with inputted or created tables of peak ranges and possible corresponding energies, it fits peaks and creates a calibration curve (line) for the detector. 
 ONE THING I NEED TO FIX HERE: we have to first fit a higher order polynomial to the calibration curve to make sure its basically linear, we cant just assume :(
 -Bruce
+
+I got calibration lines (should be done iwth a curve fit but rn its a lmfit line fit) for NaI:Ti and BGO detectors. Something is wrong with what I;m doing with the CdTe detector tho -Bruce
