@@ -185,3 +185,45 @@ def analyze_detector_efficiency(energies, count_rates, count_errors, activity, b
   }
 
   return results
+
+if __name__ == "__main__":    #Edit the peak_infos
+  
+  class MockResult:
+        def __init__(self, amp, sig):
+            self.params = {
+                'amplitude': type('obj', (object,), {'value': amp, 'stderr': amp*0.05}),
+                'sigma': type('obj', (object,), {'value': sig, 'stderr': sig*0.03})
+            }
+    
+    # Example peak information (replace with your actual fitted peaks)
+    peak_infos = []
+    
+    # Source information
+    source_info = {
+        'activity_Bq': 37000,  # 1 μCi ≈ 37000 Bq
+        'branching_ratio': 1.0  # default if not specified per peak
+    }
+    
+    # Detector geometry
+    detector_geom = {
+        'area_m2': 0.0019635,  # Example: 5 cm diameter detector = π*(0.025)^2
+        'distance_m': 0.10  # 10 cm source-detector distance
+    }
+    
+    # Compute efficiencies
+    results = compute_efficiencies(
+        peak_infos, 
+        source_info, 
+        detector_geom, 
+        angles_deg=[0, 15, 30, 45, 60],
+        plot=True
+    )
+    
+    # Print results
+    print("\n" + "="*60)
+    print("EFFICIENCY ANALYSIS RESULTS")
+    print("="*60)
+    print(f"\n{'Energy (keV)':<15} {'ε_abs':<15} {'ε_intr':<15}")
+    print("-"*45)
+    for i, E in enumerate(results['energies_keV']):
+        print(f"{E:<15.1f} {results['absolute_efficiency'][i]:<15.6f} {results['intrinsic_efficiency'][i]:<15.6f}")
