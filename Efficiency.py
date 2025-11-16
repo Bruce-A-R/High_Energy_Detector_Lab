@@ -96,7 +96,8 @@ if __name__ == "__main__":
     spe_files = [
         '/content/AM BGO.Spe',
         '/content/Co BGO.Spe',
-        '/content/Ba_BGO.Spe'
+        '/content/Ba_BGO.Spe',
+        '/content/Cs_BGO_0.Spe'
     ]
     
     # Your measured data
