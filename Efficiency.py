@@ -1,229 +1,125 @@
-import numpy as np 
-import matplotlib.py as plt
-
-def calculate_geometric_factor(detector_area, distance, angle_deg = 0.0):
-
-  # caculate geometric factor G = A_proj / (4pi d ** 2)
-
-  angle_rad = np.deg2rad(angle_deg)
-  A_proj = detector_area * np.pi * distance**2
-  G = A_proj / (4.0 * np.pi * distance**2)
-  return G
-
-def calculate_efficiencies(count_rates, count_errors, activity, branching_ratio, geometric_factor):
-
-    # calculate absolute and intrinsic efficiencies.
-
-    photon_emission_rate = activity * branching_ratios
-
-    # Absolute efficiency
-    abs_eff = count_rates / photon_emission_rate
-    abs_eff_err = abs_eff_err / photon_emission_rate
-
-    # Intrinsic efficiency
-    intr_eff = abs_eff / geometric_factor
-    intr_eff_err = intr_eff_err / geometric_factor
-
-    return {
-        'absolute': abs_eff,
-        'absolute_err': abs_eff_err,
-        'intrinsic': intr_eff,
-        'intrinsic_err': intr_eff_err
-    }
+import numpy as np
+import matplotlib.pyplot as plt
 
 
-def fit_and_evaluate_efficiency(energies, efficiencies, evaluated_energy = None):
-  
-  # Fit ln(ε) = a + b·ln(E) + c·(ln(E))²  
+def compute_efficiencies(energies, count_rates, source_info, detector_geom, angles_deg=[0.0], plot=True):
 
-  ln_E = np.log(energies)
-  ln_eff = np.log(efficiencies)
-  coeffs = np.polyfit(ln_E, ln_eff, 2)
-
-  #  Evaluate fitted efficiency model.
-  if evaluated_energy is  None:
-    evaluated_energy = energies
-
-  ln_E_eval = np.log(evaluated_energy)
-  ln_eff_eval = np.polyval(coeffs, ln_E_eval)
-  fitted_eff = np.exp(ln_eff_eval)
-
-  return fitted_eff, coeffs
-
-
-def plot_efficiency(energies, efficiencies, errors = None, fit_coeffs = None, ylable = 'Efficiency', title = 'Efficiency vs Energy'):
-
-  # Plotting efficiency vs energy on log scale.
-  fig, ax = plt.subplots(fisize = (8, 6))
-
-# Plot data
-if errors is not None:
-  ax.errorbar(energies, efficiencies, yerr = errors, fmt = 'o', markersize = 5, capsizer = 3, lable = 'Data')
-
-else:
-  ax.plot(energies, efficiencies, 'o', markersize = 5, label = 'Data')
-
-# Plot fit
-if fit_coeffs is not None:
-        E_fit = np.logspace(np.log10(energies.min()*0.9), 
-                           np.log10(energies.max()*1.1), 200)
-        eff_fit = evaluate_fit(E_fit, fit_coeffs)
+    # Compute absolute and intrinsic efficiencies.
+    activity = source_info.get('activity_Bq', None)
+    branching = source_info.get('branching_ratios', None)
+    
+    A = detector_geom.get('area_m2', None)
+    d = detector_geom.get('distance_m', None)
+    
+    energies = np.array(energies, dtype=float)
+    areas_counts_per_s = np.array(count_rates, dtype=float)
+    
+    if branching is None:
+        branching = np.ones_like(energies)
+    else:
+        branching = np.array(branching, dtype=float)
+    
+    # Compute geometric factor for angles
+    angles = np.deg2rad(np.array(angles_deg, dtype=float))
+    G_angles = []
+    A_proj = A
+    for theta in angles:
+        A_theta = A_proj * np.cos(theta)
+        G = A_theta / (4.0 * np.pi * (d**2))
+        G_angles.append(G)
+    G_angles = np.array(G_angles)
+    
+    # Compute efficiencies for theta=0
+    eps_abs = areas_counts_per_s / (activity * branching)
+    G0 = G_angles[0]
+    eps_intrinsic = areas_counts_per_s / (activity * branching * G0)
+    
+    if plot:
+        # Absolute efficiency vs Energy
+        plt.figure(figsize=(7, 5))
+        plt.scatter(energies, eps_abs, s=60)
+        plt.xscale('log')
+        plt.yscale('log')
+        plt.xlabel('Energy (keV)')
+        plt.ylabel('Absolute efficiency (ε_abs)')
+        plt.title('Absolute efficiency vs Energy')
+        plt.grid(alpha=0.3, which='both')
+        plt.show()
         
-        c, b, a = fit_coeffs
-        label = f'Fit: ln(ε) = {a:.3f} + {b:.3f}·ln(E) + {c:.3f}·(ln(E))²'
-        ax.plot(E_fit, eff_fit, '-r', linewidth=2, label=label)
+        # Intrinsic efficiency vs Energy (log-log fit)
+        lnE = np.log(energies)
+        ln_eps = np.log(eps_intrinsic)
+        p = np.polyfit(lnE, ln_eps, 2)
+        lnE_fit = np.linspace(lnE.min()*0.9, lnE.max()*1.1, 200)
+        
+        plt.figure(figsize=(7, 5))
+        plt.scatter(energies, eps_intrinsic, label='Data')
+        Efit = np.exp(lnE_fit)
+        eps_fit = np.exp(np.polyval(p, lnE_fit))
+        plt.plot(Efit, eps_fit, '-r', label=f'lnε fit: a={p[2]:.3f}, b={p[1]:.3f}, c={p[0]:.3f}')
+        plt.xscale('log')
+        plt.yscale('log')
+        plt.xlabel('Energy (keV)')
+        plt.ylabel('Intrinsic efficiency (ε_intr)')
+        plt.legend()
+        plt.grid(alpha=0.3, which='both')
+        plt.title('Intrinsic efficiency vs Energy (log-log)')
+        plt.show()
+        
+        # Efficiency vs angle 
+        if len(areas_counts_per_s) > 0 and len(angles_deg) > 1:
+            idx = np.argmax(areas_counts_per_s)
+            eps_intrinsic_angles = areas_counts_per_s[idx] / (activity * branching[idx] * G_angles)
+            plt.figure(figsize=(7, 4))
+            plt.plot(angles_deg, eps_intrinsic_angles, 'o-')
+            plt.xlabel('Angle (deg)')
+            plt.ylabel('Intrinsic efficiency (ε_intr)')
+            plt.title('Intrinsic efficiency vs Angle (example peak)')
+            plt.grid(alpha=0.3)
+            plt.show()
     
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.set_xlabel('Energy (keV)', fontsize=10)
-    ax.set_ylabel(ylabel, fontsize=10)
-    ax.set_title(title, fontsize=12, fontweight='bold')
-    ax.grid(alpha=0.3, which='both')
-    ax.legend(fontsize=10)
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_angular_dependence(angles, efficiencies, ylable = 'Intrinsic Efficiency', title = 'Efficiency vs Angle'):
-
-  # Plot efficiency vs angle
-  fig, ax = plt.subplots(figsize=(8, 5))
-  ax.plot(angles, efficiencies, 'o-', markersize=8, linewidth=2)
-  ax.set_xlabel('Angle (deg)', fontsize=12)
-  ax.set_ylabel(ylabel, fontsize=12)
-  ax.set_title(title, fontsize=14, fontweight='bold')
-  ax.grid(alpha=0.3)
-  plt.tight_layout()
-  plt.show()
-
-
-def analyze_detector_efficiency(energies, count_rates, count_errors, activity, branching_ratios, detector_area, distance, angles_deg=None, plot_results=True):
-  
-   # Complete efficiency analysis pipeline.
-   # Convert inputs to arrays
-  energies = np.asarray(energies)
-  count_rates = np.asarray(count_rates)
-  count_errors = np.asarray(count_errors)
-
-  # Handle branching ratios
-  if np.isscalar(branching_ratios):
-      branching_ratios = np.full_like(energies, branching_ratios)
-  else:
-      branching_ratios = np.asarray(branching_ratios)
-
-  # Calculate geometric factor at 0 degrees
-  G = calculate_geometric_factor(detector_area, distance, angle_deg=0.0)
-
-  # Calculate efficiencies
-  eff = calculate_efficiencies(count_rates, count_errors, activity, 
-                                branching_ratios, G)
-
-  # Fit intrinsic efficiency model
-  fit_coeffs = fit_efficiency_model(energies, eff['intrinsic'])
-
-  # Print results
-  print("="*60)
-  print("EFFICIENCY ANALYSIS RESULTS")
-  print("="*60)
-  print(f"\nGeometric factor G = {G:.6e}")
-  print(f"\nFit parameters [ln(ε) = a + b·ln(E) + c·(ln(E))²]:")
-  print(f"  a = {fit_coeffs[2]:.4f}")
-  print(f"  b = {fit_coeffs[1]:.4f}")
-  print(f"  c = {fit_coeffs[0]:.4f}")
-
-  print(f"\n{'Energy (keV)':<15} {'Abs. Eff.':<15} {'Intr. Eff.':<15}")
-  print("-"*45)
-  for i in range(len(energies)):
-      print(f"{energies[i]:<15.1f} {eff['absolute'][i]:<15.6f} {eff['intrinsic'][i]:<15.6f}")
-
-  # Generate plots
-  if plot_results:
-      # Absolute efficiency plot
-      plot_efficiency(energies, eff['absolute'], eff['absolute_err'],
-                      ylabel='Absolute Efficiency', 
-                      title='Absolute Efficiency vs Energy')
-      
-      # Intrinsic efficiency plot with fit
-      plot_efficiency(energies, eff['intrinsic'], eff['intrinsic_err'],
-                      fit_coeffs=fit_coeffs,
-                      ylabel='Intrinsic Efficiency',
-                      title='Intrinsic Efficiency vs Energy')
-      
-      # Angular dependence (if angles provided)
-      if angles_deg is not None and len(angles_deg) > 1:
-          angles_deg = np.asarray(angles_deg)
-          # Use strongest peak for angular analysis
-          strongest_idx = np.argmax(count_rates)
-          
-          eff_angles = []
-          for angle in angles_deg:
-              G_angle = calculate_geometric_factor(detector_area, distance, angle)
-              eff_dict = calculate_efficiencies(
-                  count_rates[strongest_idx:strongest_idx+1],
-                  count_errors[strongest_idx:strongest_idx+1],
-                  activity,
-                  branching_ratios[strongest_idx:strongest_idx+1],
-                  G_angle
-              )
-              eff_angles.append(eff_dict['intrinsic'][0])
-          
-          plot_angular_dependence(angles_deg, np.array(eff_angles),
-                                title=f'Efficiency vs Angle ({energies[strongest_idx]:.1f} keV)')
-
-  # Return results
-  results = {
-      'energies': energies,
-      'count_rates': count_rates,
-      'count_errors': count_errors,
-      'branching_ratios': branching_ratios,
-      'geometric_factor': G,
-      'absolute_efficiency': eff['absolute'],
-      'absolute_efficiency_err': eff['absolute_err'],
-      'intrinsic_efficiency': eff['intrinsic'],
-      'intrinsic_efficiency_err': eff['intrinsic_err'],
-      'fit_coefficients': fit_coeffs
-  }
-
-  return results
-
-if __name__ == "__main__":    #Edit the peak_infos
-  
-  class MockResult:
-        def __init__(self, amp, sig):
-            self.params = {
-                'amplitude': type('obj', (object,), {'value': amp, 'stderr': amp*0.05}),
-                'sigma': type('obj', (object,), {'value': sig, 'stderr': sig*0.03})
-            }
-    
-    # Example peak information (replace with your actual fitted peaks)
-    peak_infos = []
-    
-    # Source information
-    source_info = {
-        'activity_Bq': 37000,  # 1 μCi ≈ 37000 Bq
-        'branching_ratio': 1.0  # default if not specified per peak
+    out = {
+        'energies_keV': energies,
+        'areas_counts_per_s': areas_counts_per_s,
+        'branching': branching,
+        'absolute_efficiency': eps_abs,
+        'intrinsic_efficiency': eps_intrinsic,
+        'G_angles': G_angles,
+        'angles_deg': angles_deg
     }
+    return out
+
+# calling
+if __name__ == "__main__":
     
-    # Detector geometry
-    detector_geom = {
-        'area_m2': 0.0019635,  # Example: 5 cm diameter detector = π*(0.025)^2
-        'distance_m': 0.10  # 10 cm source-detector distance
-    }
+    # Our .spe files 
+    spe_files = [
+        '/content/AM BGO.Spe',
+        '/content/Co BGO.Spe',
+        '/content/Ba_BGO.Spe'
+    ]
     
-    # Compute efficiencies
+    # Your measured data
+    energies = np.array([59.5, 122, 356])  # keV
+    count_rates = np.array([850, 4200, 6800])  # counts/s (from your measurements)
+    
+    # Peak_info = []
+    source_info = {'activity_Bq': 37000,'branching_ratios': np.array([0.359, 0.856, 0.620])}
+    detector_geom = {'area_m2': 0.00196, 'distance_m': 0.10}
+    
     results = compute_efficiencies(
-        peak_infos, 
-        source_info, 
-        detector_geom, 
+        energies=energies,
+        count_rates=count_rates,
+        source_info=source_info,
+        detector_geom=detector_geom,
         angles_deg=[0, 15, 30, 45, 60],
         plot=True
     )
     
-    # Print results
     print("\n" + "="*60)
-    print("EFFICIENCY ANALYSIS RESULTS")
+    print("EFFICIENCY RESULTS FOR BGO DETECTOR")
     print("="*60)
-    print(f"\n{'Energy (keV)':<15} {'ε_abs':<15} {'ε_intr':<15}")
-    print("-"*45)
+    print(f"\n{'Energy (keV)':<15} {'Count Rate':<15} {'Abs. Eff.':<15} {'Intr. Eff.':<15}")
+    print("-"*60)
     for i, E in enumerate(results['energies_keV']):
-        print(f"{E:<15.1f} {results['absolute_efficiency'][i]:<15.6f} {results['intrinsic_efficiency'][i]:<15.6f}")
+        print(f"{E:<15.1f} {results['areas_counts_per_s'][i]:<15.1f} {results['absolute_efficiency'][i]:<15.6f} {results['intrinsic_efficiency'][i]:<15.6f}")
