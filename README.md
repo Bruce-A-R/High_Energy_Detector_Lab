@@ -1,13 +1,24 @@
 # High_Energy_Detector_Lab
-group repository for detector lab 
+
+Group Members: Bruce, Eris, Flora, Orlaith 
+
+Files used are in folders seperated by detector named for each detector. There is also a folder for screenshots from the computers we used to take data with the detectors and a seperate folder for 
+notebooks and scripts that are not a part of our final analysis pipeline but were created while we were figuring everything out. 
+
+# Pipeline
+
+The pipeline needs to be run individually for each detector. 
+
+image of pipeline: 
+<img width="415" height="344" alt="image" src="https://github.com/user-attachments/assets/4240fae3-d861-46e4-a60e-7a5cfe7022ca" />
+
+# Instructions for using scripts
+
+1. spectrum_reader.py: used to calibrate a detector. Run seperately for each detector with three arguments: "path to folder with spectrum files" "path to background spectrum" "detector name"
+2. efficiencies.py: used to find the absolute and intrinsic efficiences. Run seperately for each detector with the following arguments: "path to csv of results from spectrum_reader" "detector name"
+3. resolution.py: used to determine the energy resolution. Run seperately for each detector with the following arguments: "path to csv of results from spectrum_reader" "detector name"
+4. angular_effects.py: used to characterize angular effecs. Run seperately for each detector with the following arguments: "path to csv of results from spectrum_reader" "detector name"
 
 files, code, ect. should be in folders named for each detector. 
 Hopefully aside from that we can all remember the naming conventions used for each thing
 
-spectrum_reader.pynb can read any spectrum from either detector along with the corresponding backgroud, then converts counts to counts/sec and background subtracts, 
-then with inputted or created tables of peak ranges and possible corresponding energies, it fits peaks and creates a calibration curve (line) for the detector. 
-ONE THING I NEED TO FIX HERE: we have to first fit a higher order polynomial to the calibration curve to make sure its basically linear, we cant just assume :(
--Bruce
-
-I got calibration lines (should be done iwth a curve fit but rn its a lmfit line fit) for NaI:Ti and BGO detectors. Something is wrong with what I;m doing with the CdTe detector tho -Bruce
-<img width="415" height="344" alt="image" src="https://github.com/user-attachments/assets/4240fae3-d861-46e4-a60e-7a5cfe7022ca" />
