@@ -9,7 +9,7 @@ notebooks and scripts that are not a part of our final analysis pipeline but wer
 
 The pipeline needs to be run individually for each detector. 
 
-image of pipeline: 
+
 <img width="415" height="344" alt="image" src="https://github.com/user-attachments/assets/4240fae3-d861-46e4-a60e-7a5cfe7022ca" />
 
 # Instructions for using scripts
