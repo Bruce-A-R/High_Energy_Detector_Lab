@@ -10,3 +10,4 @@ ONE THING I NEED TO FIX HERE: we have to first fit a higher order polynomial to 
 -Bruce
 
 I got calibration lines (should be done iwth a curve fit but rn its a lmfit line fit) for NaI:Ti and BGO detectors. Something is wrong with what I;m doing with the CdTe detector tho -Bruce
+<img width="415" height="344" alt="image" src="https://github.com/user-attachments/assets/4240fae3-d861-46e4-a60e-7a5cfe7022ca" />
