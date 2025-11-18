@@ -6,7 +6,7 @@ relationship for the detector. The function will return a csv of peaks by their 
 peak FHWM, and peak amplitude
 
 How to use function:
-Run with the following necessary parameters: 
+Run with the following necessary arguments: 
     1. path to data files
     2. name of background file
     3. name of detector: "NaITi", "BGO", or "CdTe"
@@ -14,7 +14,6 @@ Run with the following necessary parameters:
 Outputs:
     1. results csv file
     2. plots of the energy characterization
-    3. plots of resolution characterization (NOT YET DONE)
 """
 import numpy as np
 import os
@@ -24,11 +23,10 @@ from scipy.optimize import curve_fit
 import pandas as pd
 
 from glob import glob
-from lmfit.models import LinearModel
 import argparse
 
 def file_type_checker(filename):
-    """checks the file type, because the header will have diff formatting"""
+    """Checks the file type, because the header will have diff formatting"""
     
     if filename[-3:] == "Spe":
         return "Spe"
@@ -139,16 +137,6 @@ def background_subtract(data, background):
         'counts/sec' : background_subtracted
     }
 
-    plt.close("all")
-    fig, ax = plt.subplots(figsize = (8,8))
-    ax.set_title(f"background subtracted spectra from: {data}")
-    ax.set_xlabel("bins")
-    ax.set_ylabel("counts / sec")
-    ax.scatter(table["bins"], table["counts/sec"], s = 1, label = "Spectrum")
-
-    ax.legend()
-    plt.show()
-    
     return pd.DataFrame(table)
 
 def peak_finder(table):
@@ -192,7 +180,7 @@ def gaussian(x, mu, sig, amp):
     return amp * np.exp(-0.5 * (x-mu)**2 / sig**2) / np.sqrt(2 * np.pi * sig**2)
 
 def compound_model(x, mu, sig, amp, a, b, c):
-    """combines the quadratic fit of the background with the Gaussian fit which better represents the peak"""
+    """Combines the quadratic fit of the background with the Gaussian fit which better represents the peak"""
     return quadratic(x, a, b, c) + gaussian(x, mu, sig, amp)
 
 def fit_compound_model(x, y, p0=None):
@@ -239,6 +227,7 @@ def gauss_fitter(table, peak_range):
 def subtract_and_fit(data, background, peak_range):
     """
     Function to subtract background from a sepctrum then fit a peak within a given range
+    Inputs: spectrum data, background spectrum data, range to look for peak at
     Outputs: peak location, sigma0, and amplitude from the fit. 
     """
     bg_sub_table = background_subtract(data, background)
@@ -253,7 +242,8 @@ def make_results_dict(filepath, background, detector):
     Inputs: path to files, config file? (RIGHT NOW I AM HARDCODING THAT PART), detector input as string
     Outputs: a pandas data frame
 
-    this is the stupidest function I;ve ever made and atm it entirely relies on having the same naming convention for all files
+    Note: this is the stupidest function I've ever made and atm it entirely relies on having the same naming convention for all files
+    but we DO have that so it works 
     """
     #dictionary of results to fill
     results = {
@@ -286,25 +276,25 @@ def make_results_dict(filepath, background, detector):
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Cs'][0])
                 results['energy'].append(energies['Cs'][0])
                 results['peak loc'].append(mu)
-                results['FWHM'].append(2.355 * sig)
+                results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
             elif 'Ba' in file:
                 mu0, sig0, amp0 = subtract_and_fit(file, background, ranges['Ba'][0])
                 results['energy'].append(energies['Ba'][0])
                 results['peak loc'].append(mu0)
-                results['FWHM'].append(2.355 * sig0)
+                results['FWHM'].append(2.355 * np.abs(sig0))
                 results['amp'].append(amp0)
                 
                 mu1, sig1, amp1 = subtract_and_fit(file, background, ranges['Ba'][1])
                 results['energy'].append(energies['Ba'][1])
                 results['peak loc'].append(mu1)
-                results['FWHM'].append(2.355 * sig1)
+                results['FWHM'].append(2.355 * np.abs(sig1))
                 results['amp'].append(amp1)
             elif 'Am' in file: 
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Am'][0])
                 results['energy'].append(energies['Am'][0])
                 results['peak loc'].append(mu)
-                results['FWHM'].append(2.355 * sig)
+                results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
 
     elif detector == "BGO":
@@ -329,31 +319,31 @@ def make_results_dict(filepath, background, detector):
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Co'][0])
                 results['energy'].append(energies['Co'][0])
                 results['peak loc'].append(mu)
-                results['FWHM'].append(2.355 * sig)
+                results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
             elif 'Cs' in file:
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Cs'][0])
                 results['energy'].append(energies['Cs'][0])
                 results['peak loc'].append(mu)
-                results['FWHM'].append(2.355 * sig)
+                results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
             elif 'Ba' in file:
                 mu0, sig0, amp0 = subtract_and_fit(file, background, ranges['Ba'][0])
                 results['energy'].append(energies['Ba'][0])
                 results['peak loc'].append(mu0)
-                results['FWHM'].append(2.355 * sig0)
+                results['FWHM'].append(2.355 * np.abs(sig0))
                 results['amp'].append(amp0)
                 
                 mu1, sig1, amp1 = subtract_and_fit(file, background, ranges['Ba'][1])
                 results['energy'].append(energies['Ba'][1])
                 results['peak loc'].append(mu1)
-                results['FWHM'].append(2.355 * sig1)
+                results['FWHM'].append(2.355 * np.abs(sig1))
                 results['amp'].append(amp1)
             elif 'Am' in file: 
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Am'][0])
                 results['energy'].append(energies['Am'][0])
                 results['peak loc'].append(mu)
-                results['FWHM'].append(2.355 * sig)
+                results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
         
     elif detector == "CdTe":
@@ -377,25 +367,25 @@ def make_results_dict(filepath, background, detector):
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Cs'][0])
                 results['energy'].append(energies['Cs'][0])
                 results['peak loc'].append(mu)
-                results['FWHM'].append(2.355 * sig)
+                results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
             elif 'Ba' in file:
                 mu0, sig0, amp0 = subtract_and_fit(file, background, ranges['Ba'][0])
                 results['energy'].append(energies['Ba'][0])
                 results['peak loc'].append(mu0)
-                results['FWHM'].append(2.355 * sig0)
+                results['FWHM'].append(2.355 * np.abs(sig0))
                 results['amp'].append(amp0)
                 
                 mu1, sig1, amp1 = subtract_and_fit(file, background, ranges['Ba'][1])
                 results['energy'].append(energies['Ba'][1])
                 results['peak loc'].append(mu1)
-                results['FWHM'].append(2.355 * sig1)
+                results['FWHM'].append(2.355 * np.abs(sig1))
                 results['amp'].append(amp1)
             elif 'Am' in file: 
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Am'][0])
                 results['energy'].append(energies['Am'][0])
                 results['peak loc'].append(mu)
-                results['FWHM'].append(2.355 * sig)
+                results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
 
     else: 
@@ -404,7 +394,7 @@ def make_results_dict(filepath, background, detector):
     return pd.DataFrame(results)
 
 def line(x, m, b):
-    """linear fucntion to use in fitting"""
+    """linear function to use in fitting"""
     return m * x + b                   
 
 def linear_fit(x_data, y_data, model):
