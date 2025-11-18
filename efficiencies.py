@@ -1,6 +1,6 @@
 
 """
-efficiancies.py
+efficiencies.py
 
 This script is used to find the efficiancy of each detector, using Flora's compute_efficiencies function
 
@@ -140,3 +140,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args.data, args.detector)
+
