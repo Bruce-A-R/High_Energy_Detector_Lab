@@ -279,7 +279,7 @@ def angle_checker(filename):
     Outputs: boolean key for if the measurements are angled or not, angle being measured
     """
     AM = False
-    if '0' in filename: 
+    if '_0' in filename: 
         angle = 0
     elif '45' in filename: 
         angle = 45
@@ -289,6 +289,9 @@ def angle_checker(filename):
         AM = True
     elif '135' in filename: 
         angle = 135
+        AM = True
+    elif '165' in filename:
+        angle = 165
         AM = True
     else: 
         return AM, 0

@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import scipy
 from scipy.optimize import curve_fit
 import pandas as pd
+import argparse
 
 def plot_amplitudes(table, detector):
     """Function to plot peak amplitudes by angle, with a fit line"""
@@ -23,7 +24,7 @@ def plot_amplitudes(table, detector):
     #INCLUDE RIGHT HERE THE FITTING 
 
     plt.close("all")
-    ax, plt = plt.subplots(figsize = (10, 8))
+    fig, ax = plt.subplots(figsize = (10, 8))
 
     ax.set_title(f"Characterizing {detector} Detector Off-Axis Response")
     ax.set_xlabel("Angle (deg)")
@@ -48,5 +49,4 @@ if __name__ == '__main__':
     parser.add_argument('detector', type = str, help = "name of detector used", default = None)
     args = parser.parse_args()
 
-    main(args.csv args.detector)
-
+    main(args.csv, args.detector)
