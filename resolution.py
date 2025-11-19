@@ -90,8 +90,7 @@ def main(csv, detector):
     print(f"Fit line with uncertainty: R^2 = ({popt[0]} +/1 {perr[0]})E^(-2) + ({popt[1]} +/1 {perr[1]})E^(-1) + ({popt[2]} +/1 {perr[2]})")
 
 if __name__ == '__main__': 
-    parser = argparse.ArgumentParser(description='''This script will return csv files of results used 
-    to characterize a detector based on given data files''')
+    parser = argparse.ArgumentParser(description='''This script will return a plot of resolution by energy for given detector readings''')
     parser.add_argument('csv', type = str, help = "path to the csv", default = None)
     parser.add_argument('detector', type = str, help = "name of detector used", default = None)
     args = parser.parse_args()
@@ -100,3 +99,4 @@ if __name__ == '__main__':
 
 
     
+
