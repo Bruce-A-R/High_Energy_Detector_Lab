@@ -137,6 +137,16 @@ def background_subtract(data, background):
         'counts/sec' : background_subtracted
     }
 
+    #plt.close("all")
+    #fig, ax = plt.subplots(figsize = (8,8))
+    #ax.set_title(f"Background Subtracted Spectra: {data}")
+    #ax.set_xlabel("Detector Channel")
+    #ax.set_ylabel("Counts / sec")
+    #ax.scatter(table["bins"], table["counts/sec"], s = 1, label = "Spectrum")
+
+    #ax.legend()
+    #plt.show()
+
     return pd.DataFrame(table)
 
 def peak_finder(table):
@@ -217,9 +227,36 @@ def gauss_fitter(table, peak_range):
     b_popt, b_pcov = curve_fit(quadratic, table["bins"][peak_range], background_y, p0 = None)
     quad_fit = quadratic(np.array(table["bins"][peak_range]), *b_popt)
 
-    #fitting and plotting gauss model: 
+    #plotting data with polynomial baseline fit overlaid:
+    #plt.close("all")
+    #fig, ax = plt.subplots(figsize  = (9,6))
+    #ax.set_title("Spectrum Data Plotted With Baseline Fitted")
+    #ax.set_xlabel("Detector Channel")
+    #ax.set_ylabel("Counts / Second")
+    
+    #ax.plot(table["bins"][peak_range], table["counts/sec"][peak_range], ls = ":", label = "data")
+    #ax.plot(table["bins"][peak_range], quad_fit, ls = '--', label = "fit")
+    #ax.grid()
+    #ax.legend()
+    #plt.show()
+
+    #fitting and plotting gauss model: plotting is commented out rn since theres soooo many plots when this is run. was ran to get some for the report
     popt, pcov = fit_compound_model(np.array(table["bins"][peak_range]), np.array(table["counts/sec"][peak_range]))
     gauss_fit = gaussian(np.array(table["bins"][peak_range]), *popt[:3])
+
+    #plt.close("all")
+    #fig, ax = plt.subplots(figsize = (9,6))
+    
+    #ax.set_title("Spectrum Data Plotted With Gaussian Fit")
+    #ax.set_xlabel("bins")
+    #ax.set_ylabel("counts per second")
+    
+    #ax.plot(table["bins"][peak_range], table["counts/sec"][peak_range], ls = ":", label = "data")
+    #ax.plot(table["bins"][peak_range], quad_fit, ls = '--', label = "baseline fit")
+    #ax.plot(table["bins"][peak_range], gauss_fit + quad_fit, ls = '-', color = 'r', label = "gaussian fit") 
+    #ax.grid()
+    #ax.legend()
+    #plt.show()
     
     #returning peak location, sigma, and amplitude: 
     return popt[0], popt[1], popt[2]
@@ -235,27 +272,54 @@ def subtract_and_fit(data, background, peak_range):
 
     return mu0, sigma, amp
 
+def angle_checker(filename):
+    """
+    Function to check what angle is being measured using the file name
+    Input: string file name
+    Outputs: boolean key for if the measurements are angled or not, angle being measured
+    """
+    AM = False
+    if '0' in filename: 
+        angle = 0
+    elif '45' in filename: 
+        angle = 45
+        AM = True
+    elif '90' in filename: 
+        angle = 90
+        AM = True
+    elif '135' in filename: 
+        angle = 135
+        AM = True
+    else: 
+        return AM, 0
+
+    return AM, angle
+    
+
 def make_results_dict(filepath, background, detector):
     """
     Funtion to take in a path to all the spectrum readings we'll use from a given detector, parse them, fit to specific ranges for peaks 
     for a given source in the file name, and append fit results to a dictionary for use characterizing the detector
-    Inputs: path to files, config file? (RIGHT NOW I AM HARDCODING THAT PART), detector input as string
-    Outputs: a pandas data frame
+    Inputs: path to files, path to background file, detector input as string
+    Outputs: a pandas data frame and a boolean of whether the measuremends are angled or not
 
-    Note: this is the stupidest function I've ever made and atm it entirely relies on having the same naming convention for all files
-    but we DO have that so it works 
+    Note: I know this function is very long and could probably be split up with another function to assign everything, 
+    but because of time constraints this is what I have. 
     """
     #dictionary of results to fill
     results = {
         'energy' : [],
         'peak loc' : [],
         'FWHM' : [],
-        'amp' : []
+        'amp' : [], 
+        'angle': []
     }
 
-    
+    #key for if spectrum_reader is being used for angled measurements: 
+    ANGLED_MEASUREMENTS = False
+
+    #gathering results, based on detector so that energies and peak ranges can be hardocded (config file confusing). 
     if detector == "NaITi":
-        #THIS IS HARDCODED RN AND SHOULD BE FROM CONFIG FILE
         energies = { 
             #'Co' : [1173.228, 1332.492],  Co NOT USED FOR THIS DETECTOR THE PEAKS SUCK
             'Cs' : [661.657],
@@ -272,30 +336,38 @@ def make_results_dict(filepath, background, detector):
         datafiles = glob(filepath + '*.Spe')
 
         for file in datafiles:
+
+            ANGLED_MEASUREMENTS, angle = angle_checker(file)
+
+            #getting rest of data needed from file: 
             if 'Cs' in file:
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Cs'][0])
                 results['energy'].append(energies['Cs'][0])
                 results['peak loc'].append(mu)
                 results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
+                results['angle'].append(angle)
             elif 'Ba' in file:
                 mu0, sig0, amp0 = subtract_and_fit(file, background, ranges['Ba'][0])
                 results['energy'].append(energies['Ba'][0])
                 results['peak loc'].append(mu0)
                 results['FWHM'].append(2.355 * np.abs(sig0))
                 results['amp'].append(amp0)
+                results['angle'].append(angle)
                 
                 mu1, sig1, amp1 = subtract_and_fit(file, background, ranges['Ba'][1])
                 results['energy'].append(energies['Ba'][1])
                 results['peak loc'].append(mu1)
                 results['FWHM'].append(2.355 * np.abs(sig1))
                 results['amp'].append(amp1)
+                results['angle'].append(angle)
             elif 'Am' in file: 
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Am'][0])
                 results['energy'].append(energies['Am'][0])
                 results['peak loc'].append(mu)
                 results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
+                results['angle'].append(angle)
 
     elif detector == "BGO":
         energies = { 
@@ -315,36 +387,44 @@ def make_results_dict(filepath, background, detector):
         datafiles = glob(filepath + '*.Spe')
         
         for file in datafiles:
+            ANGLED_MEASUREMENTS, angle = angle_checker(file)
+
+            #getting rest of data needed from file: 
             if 'Co' in file:
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Co'][0])
                 results['energy'].append(energies['Co'][0])
                 results['peak loc'].append(mu)
                 results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
+                results['angle'].append(angle)
             elif 'Cs' in file:
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Cs'][0])
                 results['energy'].append(energies['Cs'][0])
                 results['peak loc'].append(mu)
                 results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
+                results['angle'].append(angle)
             elif 'Ba' in file:
                 mu0, sig0, amp0 = subtract_and_fit(file, background, ranges['Ba'][0])
                 results['energy'].append(energies['Ba'][0])
                 results['peak loc'].append(mu0)
                 results['FWHM'].append(2.355 * np.abs(sig0))
                 results['amp'].append(amp0)
+                results['angle'].append(angle)
                 
                 mu1, sig1, amp1 = subtract_and_fit(file, background, ranges['Ba'][1])
                 results['energy'].append(energies['Ba'][1])
                 results['peak loc'].append(mu1)
                 results['FWHM'].append(2.355 * np.abs(sig1))
                 results['amp'].append(amp1)
+                results['angle'].append(angle)
             elif 'Am' in file: 
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Am'][0])
                 results['energy'].append(energies['Am'][0])
                 results['peak loc'].append(mu)
                 results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
+                results['angle'].append(angle)
         
     elif detector == "CdTe":
         energies = { 
@@ -363,35 +443,42 @@ def make_results_dict(filepath, background, detector):
         datafiles = glob(filepath + '*.mca')
         
         for file in datafiles:
+            ANGLED_MEASUREMENTS, angle = angle_checker(file)
+
+            #getting rest of data needed from file: 
             if 'Cs' in file:
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Cs'][0])
                 results['energy'].append(energies['Cs'][0])
                 results['peak loc'].append(mu)
                 results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
+                results['angle'].append(angle)
             elif 'Ba' in file:
                 mu0, sig0, amp0 = subtract_and_fit(file, background, ranges['Ba'][0])
                 results['energy'].append(energies['Ba'][0])
                 results['peak loc'].append(mu0)
                 results['FWHM'].append(2.355 * np.abs(sig0))
                 results['amp'].append(amp0)
+                results['angle'].append(angle)
                 
                 mu1, sig1, amp1 = subtract_and_fit(file, background, ranges['Ba'][1])
                 results['energy'].append(energies['Ba'][1])
                 results['peak loc'].append(mu1)
                 results['FWHM'].append(2.355 * np.abs(sig1))
                 results['amp'].append(amp1)
+                results['angle'].append(angle)
             elif 'Am' in file: 
                 mu, sig, amp = subtract_and_fit(file, background, ranges['Am'][0])
                 results['energy'].append(energies['Am'][0])
                 results['peak loc'].append(mu)
                 results['FWHM'].append(2.355 * np.abs(sig))
                 results['amp'].append(amp)
+                results['angle'].append(angle)
 
     else: 
         print("Spell the Name of the Detector Right PLease: NaITi, BGO, or CdTe.")
     
-    return pd.DataFrame(results)
+    return pd.DataFrame(results), ANGLED_MEASUREMENTS
 
 def line(x, m, b):
     """linear function to use in fitting"""
@@ -400,44 +487,62 @@ def line(x, m, b):
 def linear_fit(x_data, y_data, model):
     """Function to fit a line to points using curve_fit"""
     popt, pcov = curve_fit(model, x_data, y_data)
-    return popt
+    return popt, pcov
 
-def fit_energies(dictionary):
+def fit_energies(dictionary, detector_name):
     """
     Function to fit energies to channel numbers using curvefit
     Input: dictionary of results from make_results_dict
     Output: slope and intercept of channel-energy relation line
     """
     
-    popt = linear_fit(dictionary['peak loc'], dictionary['energy'], line)
+    popt, pcov = linear_fit(dictionary['peak loc'], dictionary['energy'], line)
+    perr = np.sqrt(np.diag(pcov))
+
+    #grabbing uncertainties: 
+    dictionary['peak unc'] = [(dictionary["peak loc"][i] * perr[0]) + perr[1] for i in range(len(dictionary["peak loc"]))]
+    #for peak in dictionary["peak loc"]:
+    #   dictionary['peak unc'].append((peak * perr[0]) + perr[1])
+    #error bars wouldn'
+    y_err = perr[0] + perr[1]
+
     fit_line = line(dictionary['peak loc'], popt[0], popt[1])
 
     plt.close("all")
     fig, ax = plt.subplots(figsize = (8, 8))
     
-    ax.set_title("Detector peak energy by channel number")
+    ax.set_title(f"Calibrating {detector_name}: Peak Energy by Channel Number")
     ax.set_xlabel("Channel Number")
     ax.set_ylabel("Energy (keV)")
+    ax.errorbar(dictionary['peak loc'], dictionary['energy'], yerr= np.array(dictionary['peak unc']), fmt='o', ecolor='blue', capsize=5, label = "data")
     ax.scatter(dictionary['peak loc'], dictionary['energy'], label = "data")
     ax.plot(dictionary['peak loc'], fit_line, ls = "-", color = "red", label = "fit line")
     ax.legend()
     plt.show()
     
-    print(f"Slope: {popt[0]} and Intercept: {popt[1]}")
+    #print(f"Slope: {popt[0]} and Intercept: {popt[1]}")
 
-    return popt[0], popt[1]
+    return popt[0], popt[1], y_err
 
 def main(data_path, bg_path, detector):
     """Main function to run what the script does"""
-    dictionary = make_results_dict(data_path, bg_path, detector)
-    slope, intercept = fit_energies(dictionary)
+    dictionary, ANGLED_MEASUREMENTS = make_results_dict(data_path, bg_path, detector)
+    slope, intercept, error = fit_energies(dictionary, detector)
 
     #adding FWHM in terms of energy to dictionary: 
     dictionary["FWHM (keV)"] = line(dictionary["FWHM"], slope, intercept)
+    #dictionary["energy fit error"] = [error for i in range(len(dictionary["energy"]))]
 
     print(f"Slope of energy fit: {slope} Intercept of energy fit: {intercept}")
 
-    csv_name = f"{detector} + results.csv"
+    #saving csv of results: 
+
+    if ANGLED_MEASUREMENTS: 
+        csv_name = detector + "results_angled.csv"
+    else: 
+        csv_name = detector + "results.csv"
+
+    #csv_name = f"{detector} + results.csv"
 
     #writing results to csv: 
     dictionary.to_csv(csv_name, index=False)  
