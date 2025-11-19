@@ -133,11 +133,11 @@ def main(data, detector):
 
 
 if __name__ == '__main__': 
-    parser = argparse.ArgumentParser(description='''This script will return csv files of results used 
-    to characterize a detector based on given data files''')
+    parser = argparse.ArgumentParser(description='''This script will find intrinsic and absolute efficiencies by energy using provided detector results''')
     parser.add_argument('data', type = str, help = "csv of data from spectrum_reader", default = None)
     parser.add_argument('detector', type = str, help = "name of detector used", default = None)
     args = parser.parse_args()
 
     main(args.data, args.detector)
+
 
