@@ -5,6 +5,10 @@ Group Members: Bruce, Eris, Flora, Orlaith
 Files used are in folders seperated by detector named for each detector. There is also a folder for screenshots from the computers we used to take data with the detectors and a seperate folder for 
 notebooks and scripts that are not a part of our final analysis pipeline but were created while we were figuring everything out. 
 
+References/Citations: 
+1. AI was used to generate some code used in this assignment in efficiencies.py
+2. Code found on GeeksforGeeks and Stack Overflow was also used in resolution.py, which may also contain AI generated responses. 
+
 # Pipeline
 
 The pipeline needs to be run individually for each detector. 
