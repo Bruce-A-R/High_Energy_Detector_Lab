@@ -17,7 +17,7 @@ import scipy
 from scipy.optimize import curve_fit
 import pandas as pd
 
-def plot_amplitudes(csv, detector):
+def plot_amplitudes(table, detector):
     """Function to plot peak amplitudes by angle, with a fit line"""
 
     #INCLUDE RIGHT HERE THE FITTING 
@@ -38,7 +38,7 @@ def main(csv, detector):
     """Main function to run what the script does"""
 
     table = pd.read_csv(csv)
-
+    plot_amplitudes(table, detector)
     
 
 if __name__ == '__main__': 
@@ -49,3 +49,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args.csv args.detector)
+
