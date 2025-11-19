@@ -5,8 +5,9 @@ The names for each csv file match with the detector they are from.
 
 File contents, for each peak: 
 
-cols: Peak energies (KeV units), peak location (in detector channel units), peak FWHM (detector channel units), peak amplitude (in counts/sec), and FWHM (in KeV units)
+cols: Peak energies (KeV units), peak location (in detector channel units), peak FWHM (detector channel units), peak amplitude (in counts/sec), angle of source to detector, and FWHM (in KeV units)
 
+There are also graphs from all the results I've gotten from running our data through our pipeline. - Bruce
 
 fit line equations: 
 
